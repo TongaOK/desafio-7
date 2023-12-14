@@ -10,7 +10,7 @@ import { init as initPassportConfig, githubStrategyInit } from "./config/passpor
 import productsRouter from "./routers/products.router.js";
 import cartsRouter from "./routers/carts.router.js";
 import homeRouter from "./routers/home.router.js";
-import RTPRouter from "./routers/realtimeproducts.router.js";
+// import RTPRouter from "./routers/realtimeproducts.router.js";
 import sessionsRouter from "./routers/sessions.router.js";
 import dotenv from "dotenv";
 import passport from "passport";
@@ -54,7 +54,13 @@ app.use(passport.session())
 app.use("/", homeRouter);
 app.use("/api/products", productsRouter);
 app.use("/api/carts", cartsRouter);
-app.use("/api/realtimeproducts", RTPRouter);
+// app.use("/api/realtimeproducts", RTPRouter);
 app.use("/api/sessions", sessionsRouter);
+
+app.use((error, req, res, next) => {
+  const message = `Ah ocurrido un error inesperado ${error.message}`
+  console.log(message);
+  res.status(500).json({ status: 'error', message });
+})
 
 export default app;

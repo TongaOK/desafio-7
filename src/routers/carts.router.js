@@ -1,14 +1,13 @@
 import { Router } from "express";
 import CartModel from "../models/cart.model.js";
+import CartController from "../controllers/carts.controller.js";
 
 const router = Router();
+const controller = new CartController();
 
 router.get('/:cid', async (req, res) => {
   try {
-    const cartId = req.params.cid;
-    const cart = await CartModel.findById(cartId).populate("products.product");
-    const products = cart.products.map(product =>  product.toJSON())
-
+    const {cart, products} = await controller.getCartById(req.params.cid);
     if (!cart) {
       return res.status(404).json({ error: 'Carrito no encontrado' });
     }
@@ -17,90 +16,58 @@ router.get('/:cid', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Error al cargar el carrito' });
   }
-});
+}); // YA ESTA
 
 router.delete('/:cid/products/:pid', async (req, res) => {
   try {
-    const cart = await CartModel.findById(req.params.cid);
-    if (!cart) {
-      return res.status(404).json({ message: 'Carrito no encontrado' });
-    }
-
-    const productIndex = cart.products.findIndex(
-      (product) => product.product.toString() === req.params.pid
-    );
-    if (productIndex === -1) {
-      return res.status(404).json({ message: 'Producto no encontrado en el carrito' });
-    }
-
-    cart.products.splice(productIndex, 1);
-    await cart.save();
-
-    res.json({ message: 'Producto eliminado del carrito' });
+    const result = await controller.deleteProductFromCart(req.params.cid, req.params.pid);
+    res.status(result.status).json({ message: result.message });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(error.status || 500).json({ message: error.message || 'Error interno del servidor' });
   }
-});
+}); // REVISAR
+
 
 router.put('/:cid', async (req, res) => {
   const cartId = req.params.cid;
   const { products } = req.body;
 
   try {
-    const cart = await CartModel.findById(cartId).populate("products.product");
-    if (!cart) {
-      return res.status(404).json({ error: 'Carrito no encontrado' });
-    }
-
-    cart.products = products;
-    await cart.save();
-
-    res.json({ message: 'Carrito actualizado con nuevos productos' });
+    const result = await controller.updateCart(cartId, products);
+    res.status(result.status).json({ message: result.message });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al actualizar el carrito' });
+    res.status(error.status || 500).json({ message: error.message || 'Error al actualizar el carrito' });
   }
-});
+}); //REVISAR
 
 router.put('/:cid/products/:pid', async (req, res) => {
+  const cartId = req.params.cid;
+  const productId = req.params.pid;
+  const newQuantity = req.body.quantity;
+
   try {
-    const cart = await CartModel.findById(req.params.cid);
-    if (!cart) {
-      return res.status(404).json({ message: 'Carrito no encontrado' });
-    }
-
-    const product = cart.products.find(
-      (product) => product.product.toString() === req.params.pid
-    );
-
-    if (!product) {
-      return res.status(404).json({ message: 'Producto no encontrado en el carrito' });
-    }
-
-    product.quantity = req.body.quantity;
-    await cart.save();
-
-    res.json({ message: 'Cantidad del producto actualizada en el carrito' });
+    const result = await controller.updateProductQuantity(cartId, productId, newQuantity);
+    res.status(result.status).json({ message: result.message });
   } catch (error) {
-    res.status(500).json({ message: 'Error interno del servidor' });
+    console.error(error);
+    res.status(error.status || 500).json({ message: error.message || 'Error interno del servidor' });
   }
-});
+}); //REVISAR
 
 router.delete('/:cid', async (req, res) => {
+  const cartId = req.params.cid;
+
   try {
-    const cart = await CartModel.findById(req.params.cid);
-    if (!cart) {
-      return res.status(404).json({ message: 'Carrito no encontrado' });
-    }
-
-    cart.products = [];
-    await cart.save();
-
-    res.json({ message: 'Todos los productos eliminados del carrito' });
+    const result = await controller.deleteAllProductsFromCart(cartId);
+    res.status(result.status).json({ message: result.message });
   } catch (error) {
-    res.status(500).json({ message: 'Error interno del servidor' });
+    console.error(error);
+    res.status(error.status || 500).json({ message: error.message || 'Error interno del servidor' });
   }
-});
+}); //REVISAR
+
+
 
 export default router;

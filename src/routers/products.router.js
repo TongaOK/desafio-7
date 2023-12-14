@@ -1,19 +1,15 @@
 import { Router } from "express";
-import ProductModel from "../models/product.model.js";
+import ProductController from "../controllers/products.controller.js";
+/*import ProductModel from "../models/product.model.js";*/
 
 const router = Router();
+const controller = new ProductController();
 
 router.get("/", async (req, res) => {
 
   const user = req.session.user;
-  const { page = 1, limit = 10, group, sort } = req.query; // sort: asc | desc
-  const opts = { page, limit, sort: { price: sort || "asc" } };
-  const criteria = {};
-  if (group) {
-    criteria.group = group;
-  }
-  console.log("User Object:", user);
-  const result = await ProductModel.paginate(criteria, opts);
+  console.log(req.query)
+  const {result, group, sort} = await controller.getByPage(req, res);
   res.render("products", {
     user,
     ...buildResponse({ ...result, group, sort }),
